@@ -1,0 +1,32 @@
+{
+    "compilerOptions": {
+        "module": "commonjs",
+        "declaration": true,
+        "removeComments": true,
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
+        "allowSyntheticDefaultImports": true,
+        "target": "es2017",
+        "lib": ["ES2021.String"],
+        "sourceMap": true,
+        "outDir": "./dist",
+        "baseUrl": "src",
+        "paths": {
+            "@decorators/*": ["decorators/*"],
+            "@interfaces/*": ["interfaces/*"],
+            "@schemas/*": ["schemas/*"],
+            "@models/*": ["models/*"],
+            "@modules/*": ["modules/*"],
+            "@templates/*": ["email-templates/*"],
+            "@helpers/*": ["helpers/*"],
+            "@classes/*": ["classes/*"]
+        },
+        "incremental": true,
+        "skipLibCheck": true,
+        "strictNullChecks": false,
+        "noImplicitAny": false,
+        "strictBindCallApply": false,
+        "forceConsistentCasingInFileNames": false,
+        "noFallthroughCasesInSwitch": false
+    }
+}
