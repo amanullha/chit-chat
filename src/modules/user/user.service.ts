@@ -1,21 +1,21 @@
-import { Injectable, HttpException, HttpStatus, Inject } from '@nestjs/common';
-import { CreateUserDto } from './dto/createUserDto';
-import { IUser, IUserKey, JwtTokens } from '@interfaces/user.interface';
-import { GlobalHelper } from '@helpers/global.helper';
-import { UserType } from '@models/userType.enum';
-import { Status } from '@models/status.enum';
 import { ExceptionHelper } from '@helpers/exception.helper';
+import { GlobalHelper } from '@helpers/global.helper';
+import { IUser, JwtTokens } from '@interfaces/user.interface';
 import { DB_tables } from '@models/dbTable.enum';
+import { Status } from '@models/status.enum';
+import { UserType } from '@models/userType.enum';
+import { HttpStatus, Injectable } from '@nestjs/common';
+import { CreateUserDto } from './dto/createUserDto';
 
 import { AuthHelper } from '@helpers/auth.helper';
-import * as dotenv from 'dotenv';
 import { JwtService } from '@nestjs/jwt';
-import { LoginRequestType, UserLoginDto } from './dto/userLoginDto';
-import { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
+import { UserDocument } from '@schemas/user.schema';
+import * as dotenv from 'dotenv';
+import mongoose, { Model } from 'mongoose';
 import { AllUserDto } from './dto/allUserDto';
 import { UpdateProfileDto } from './dto/updateProfile';
-import { User, UserDocument } from '@schemas/user.schema';
+import { LoginRequestType, UserLoginDto } from './dto/userLoginDto';
 
 dotenv.config();
 @Injectable()
@@ -23,7 +23,7 @@ export class UserService {
   constructor(
     @InjectModel(DB_tables.USER) private readonly userModel: Model<UserDocument>,
     private jwtService: JwtService,
-  ) {}
+  ) { }
 
   async createUser(
     createUserDto: CreateUserDto,
@@ -107,7 +107,15 @@ export class UserService {
   }
 
   async getOneUser(userId: string): Promise<IUser> {
-    return await this.userModel.findById({ _id: userId });
+    if (!GlobalHelper.getInstance().isEmpty(userId)) {
+      if (mongoose.Types.ObjectId.isValid(userId)) {
+        return await this.userModel.findById(userId);
+      } else {
+        ExceptionHelper.getInstance().defaultError("Invalid user ID", "Invalid_user_ID", HttpStatus.BAD_REQUEST);
+      }
+    } else {
+      ExceptionHelper.getInstance().defaultError("User not found", "User_not_found", HttpStatus.NOT_FOUND);
+    }
   }
 
   async userLogin(
@@ -160,10 +168,15 @@ export class UserService {
       phone: updateProfileDto.phone ?? user?.phone,
       name: updateProfileDto.name ?? user?.name,
     };
-    let updateUser = await this.userModel
-      .findByIdAndUpdate({ _id: user._id }, obj, { new: true })
-      .lean()
-      .exec();
-    return updateUser;
+    if (!GlobalHelper.getInstance().isEmpty(user)) {
+      let updateUser = await this.userModel
+        .findByIdAndUpdate(user?._id, obj, { new: true })
+        .lean()
+        .exec();
+      return updateUser;
+    }
+    else {
+      ExceptionHelper.getInstance().defaultError("user not fund", "User_not_found", HttpStatus.NOT_FOUND);
+    }
   }
 }

@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { MongooseModule } from '@nestjs/mongoose';
+import * as dotenv from 'dotenv';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UserModule } from './modules/user/user.module';
-import { ConfigModule } from '@nestjs/config';
-import { DynamooseModule, DynamooseModuleOptions } from 'nestjs-dynamoose';
-import * as dotenv from 'dotenv';
-import { MongooseModule } from '@nestjs/mongoose';
+import { EventGateway } from './modules/event/event.gateway';
 dotenv.config();
 
 
@@ -19,6 +19,6 @@ dotenv.config();
     UserModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, EventGateway],
 })
-export class AppModule {}
+export class AppModule { }
