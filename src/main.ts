@@ -33,6 +33,7 @@ async function bootstrap() {
   //   //   // You can configure more namespaces and rooms here if needed
   //   // }
   // ));
+  // test
   app.useWebSocketAdapter(new SocketAdapter(app));
 
   const port = configService.get('APP_PORT') ?? 3001;

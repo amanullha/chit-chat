@@ -1,7 +1,9 @@
 import { ConnectedSocket, MessageBody, OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 
-@WebSocketGateway(8080)
+
+@WebSocketGateway({ namespace: "chitchat" })
+// @WebSocketGateway()
 export class EventGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
 
   @WebSocketServer()
@@ -12,9 +14,27 @@ export class EventGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
     console.log('WebSocket server initialized');
   }
 
+
   // This method runs when a client connects to the WebSocket server
+  // handleConnection(client: Socket) {
+  //   let clientId = client.id;
+  //   console.log(`Client connected: ${clientId}`);
+  //   // console.log(client)
+  //   client.emit("mgs", { connected: true })
+  // }
   handleConnection(client: Socket) {
-    console.log(`Client connected: ${client.id}`);
+    let clientId = client.id;
+
+
+    if (!client.handshake.auth || client.handshake.auth.token !== "12345") {
+      client.disconnect();
+      return;
+    }
+    console.log(`Client connected: ${clientId}`);
+    // client.emit("message", {
+    //   clientId: clientId,
+    //   message: clientId + " is connected now"
+    // })
   }
 
   // This method runs when a client disconnects from the WebSocket server
@@ -28,7 +48,8 @@ export class EventGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
     console.log('Received message:', data);
 
     // Broadcast the message to all clients in the same namespace
-    client.broadcast.emit('message', data);
+    this.server.emit('message', data);
+    // client.broadcast.emit('message', data);
   }
 
   // Create a custom namespace (e.g., /room1) and handle events within it
