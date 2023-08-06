@@ -8,6 +8,9 @@ import { HttpStatus, Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/createUserDto';
 
 import { AuthHelper } from '@helpers/auth.helper';
+import { MailTemplate } from '@helpers/mailTemplateHelper';
+import { EmailOptions } from '@interfaces/emailOptions.interface';
+import { MailService } from '@modules/mail/mail.service';
 import { JwtService } from '@nestjs/jwt';
 import { InjectModel } from '@nestjs/mongoose';
 import { UserDocument } from '@schemas/user.schema';
@@ -20,9 +23,11 @@ import { LoginRequestType, UserLoginDto } from './dto/userLoginDto';
 dotenv.config();
 @Injectable()
 export class UserService {
+
   constructor(
     @InjectModel(DB_tables.USER) private readonly userModel: Model<UserDocument>,
     private jwtService: JwtService,
+    private readonly mailService: MailService,
   ) { }
 
   async createUser(
@@ -32,11 +37,34 @@ export class UserService {
     try {
       const obj = await this.constructCreateUserObj(createUserDto, userType);
       let user: IUser = (await this.userModel.create(obj)).toObject();
+      await this.sendVerificationCode(user);
       const returnUser = this.constructReturnUserObj(user);
       return returnUser;
     } catch (error) {
       this.resolveError(error);
     }
+  }
+  async sendVerificationCode(user: IUser) {
+    const token = await AuthHelper.getInstance().generateToken(user, this.jwtService, '2D');
+    const link = `localhost:${process.env.APP_PORT}/user/verify/${token}`
+    let mailObj = {
+       userName: user.name,
+       to:user?.email,
+       subject:"Verification Link",  
+       verificationLink: link 
+      }
+    await this.sendEmail(mailObj);
+  }
+  async verifyUser(token: string) {
+    const user = await AuthHelper.getInstance().tokenVerify(token, this.userModel, this.jwtService);
+    if (!GlobalHelper.getInstance().isEmpty(user)) {
+      await this.userModel.findByIdAndUpdate(user?._id, { isVerified: true })
+      return { isVerified: true }
+    }
+    else {
+      ExceptionHelper.getInstance().defaultError("Invalid code", "Invalid_code", HttpStatus.BAD_REQUEST);
+    }
+
   }
   private resolveError(error: any) {
     if (error?.code == '11000') {
@@ -179,4 +207,20 @@ export class UserService {
       ExceptionHelper.getInstance().defaultError("user not fund", "User_not_found", HttpStatus.NOT_FOUND);
     }
   }
+
+  async sendEmail(data: EmailOptions) {
+    const { to, subject, text, from } = data;
+    let emailObj: EmailOptions = {
+      to: to,
+      subject: subject,
+      text: text,
+      html: MailTemplate.getInstance().createVerificationHtmlTemplate(data.userName, data.verificationLink),
+    }
+    if (!GlobalHelper.getInstance().isEmpty(from)) {
+      emailObj['from'] = from;
+    }
+
+    return await this.mailService.sendEmail(emailObj);
+  }
+
 }

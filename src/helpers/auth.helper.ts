@@ -1,13 +1,13 @@
 import { IUser, JwtTokens } from '@interfaces/user.interface';
-import { JwtService } from '@nestjs/jwt';
-import * as bcrypt from 'bcrypt';
-import { TEN_MINS_IN_MILL_SECONDS } from './globalConstants';
-import * as dotenv from 'dotenv';
 import { LoginRequestType, UserLoginDto } from '@modules/user/dto/userLoginDto';
-import { GlobalHelper } from './global.helper';
+import { JwtService } from '@nestjs/jwt';
+import { UserDocument } from '@schemas/user.schema';
+import * as bcrypt from 'bcrypt';
+import * as dotenv from 'dotenv';
 import { Model } from 'mongoose';
+import { GlobalHelper } from './global.helper';
+import { TEN_MINS_IN_MILL_SECONDS } from './globalConstants';
 dotenv.config();
-import { User, UserDocument, UserSchema } from '@schemas/user.schema';
 
 export class AuthHelper {
   private static instance: AuthHelper;
@@ -63,7 +63,7 @@ export class AuthHelper {
     jwt: JwtService,
     expireTime: any,
   ): Promise<string> {
-    const token = jwt.sign(body, { expiresIn: expireTime });
+    const token = jwt.sign({ body: body }, { expiresIn: expireTime });
     return token;
   }
   async verify(
@@ -74,8 +74,8 @@ export class AuthHelper {
   ): Promise<IUser> {
     let user: IUser = null;
     if (userLoginDto.type == LoginRequestType.Email) {
-      const users:IUser[] = await userModel
-        .find({email:userLoginDto.email})
+      const users: IUser[] = await userModel
+        .find({ email: userLoginDto.email })
         .exec();
       user = GlobalHelper.getInstance().arrayFirstOrNull(users);
     } else if (userLoginDto.type == LoginRequestType.Refresh) {
@@ -86,7 +86,7 @@ export class AuthHelper {
         });
         if (!GlobalHelper.getInstance().isEmpty(decodedToken)) {
           const users: IUser[] = await userModel
-            .find({email:decodedToken['body']['email']})
+            .find({ email: decodedToken['body']['email'] })
             .exec();
           user = GlobalHelper.getInstance().arrayFirstOrNull(users);
         }
@@ -97,5 +97,27 @@ export class AuthHelper {
     return user;
     // const token = jwt.sign(body, { expiresIn: expireTime });
     // return token;
+  }
+  async tokenVerify(
+    token: string,
+    userModel: Model<UserDocument>,
+    jwt: JwtService,
+  ): Promise<IUser> {
+    let user: IUser = null;
+    const secretKey = String(process.env.JWT_SECRET);
+    try {
+      const decodedToken = jwt.verify(token, {
+        secret: secretKey,
+      });
+      if (!GlobalHelper.getInstance().isEmpty(decodedToken)) {
+        const users = await userModel.find({ email: decodedToken['body']['email'] }).lean().exec();
+        user = GlobalHelper.getInstance().arrayFirstOrNull(users);
+      }
+    } catch (error) {
+      user = null;
+    }
+
+    return user;
+
   }
 }

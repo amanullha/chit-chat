@@ -1,6 +1,7 @@
 import { ConnectedSocket, MessageBody, OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
+import * as dotenv from 'dotenv';
 import { Server, Socket } from 'socket.io';
-
+dotenv.config();
 
 @WebSocketGateway({ namespace: "chitchat" })
 // @WebSocketGateway()
@@ -26,7 +27,7 @@ export class EventGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
     let clientId = client.id;
 
 
-    if (!client.handshake.auth || client.handshake.auth.token !== "12345") {
+    if (!client.handshake.auth || client.handshake.auth.token !== process.env.SOCKET_SECRET) {
       client.disconnect();
       return;
     }

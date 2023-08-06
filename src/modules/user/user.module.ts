@@ -1,5 +1,6 @@
 import { JwtStrategy } from '@decorators/jwt.strategy';
 import { DB_tables } from '@models/dbTable.enum';
+import { MailService } from '@modules/mail/mail.service';
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { MongooseModule } from '@nestjs/mongoose';
@@ -19,7 +20,7 @@ dotenv.config();
     }),
   ],
   controllers: [UserController],
-  providers: [UserService, JwtStrategy],
+  providers: [UserService, JwtStrategy, MailService],
   exports: [JwtStrategy, PassportModule],
 })
 export class UserModule { }

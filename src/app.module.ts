@@ -6,6 +6,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UserModule } from './modules/user/user.module';
 import { EventGateway } from './modules/event/event.gateway';
+import { MailModule } from './modules/mail/mail.module';
 dotenv.config();
 
 
@@ -17,6 +18,7 @@ dotenv.config();
       // Optional configuration options
     }),
     UserModule,
+    MailModule,
   ],
   controllers: [AppController],
   providers: [AppService, EventGateway],
