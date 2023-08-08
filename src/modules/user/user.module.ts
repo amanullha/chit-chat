@@ -9,6 +9,7 @@ import { UserSchema } from '@schemas/user.schema';
 import * as dotenv from 'dotenv';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
+import { GoogleStrategy } from '@decorators/google.strategy';
 dotenv.config();
 @Module({
   imports: [
@@ -20,7 +21,7 @@ dotenv.config();
     }),
   ],
   controllers: [UserController],
-  providers: [UserService, JwtStrategy, MailService],
+  providers: [UserService, JwtStrategy, MailService,GoogleStrategy],
   exports: [JwtStrategy, PassportModule],
 })
 export class UserModule { }

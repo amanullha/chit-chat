@@ -27,6 +27,25 @@ export class UserController {
   async userLogin(@Body() userLoginDto: UserLoginDto): Promise<{ user: IUser; tokens: JwtTokens; }> {
     return await this.userService.userLogin(userLoginDto);
   }
+  @Get("/google/login")
+  @UseGuards(AuthGuard('google'))
+  async googleLogin() {
+    console.log("google login");
+
+  }
+
+  @Get("/google/login/callback")
+  @UseGuards(AuthGuard('google'))
+  async googleLoginCallback(
+    @GetUser() user: any
+  ) {
+    console.log("calling from here");
+    console.log("user: ", user);
+
+
+    // Redirect or return JWT token
+  }
+
   @Put('/update-profile')
   @UseGuards(AuthGuard("jwt"))
   async updateProfile(

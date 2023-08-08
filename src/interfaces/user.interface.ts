@@ -1,3 +1,4 @@
+import { Provider } from "@models/privider.enum";
 import { Status } from "@models/status.enum";
 import { UserType } from "@models/userType.enum";
 import {  Document, Types } from 'mongoose';
@@ -19,6 +20,7 @@ export interface IUser {
   readonly resetCode?: string;
   readonly isVerified?: boolean;
   readonly status?: Status;
+  readonly provider?: Provider;
   readonly createdAt?: Date;
   readonly updatedAt?: Date;
   readonly __v?:number;

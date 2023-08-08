@@ -1,3 +1,4 @@
+import { Provider } from '@models/privider.enum';
 import { Status } from '@models/status.enum';
 import { UserType } from '@models/userType.enum';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
@@ -6,12 +7,12 @@ import { Document } from 'mongoose';
 
 export type UserDocument = User & Document;
 
-@Schema({timestamps:true})
+@Schema({ timestamps: true })
 export class User {
   @Prop()
   name: string;
 
-  @Prop({unique:true})
+  @Prop({ unique: true })
   @Prop()
   email: string;
 
@@ -33,7 +34,7 @@ export class User {
   @Prop()
   isVerified: boolean;
 
-  @Prop({ 
+  @Prop({
     // type: Status,
     enum: [Status.ACTIVE, Status.IN_ACTIVE],
     default: Status.ACTIVE
@@ -42,10 +43,16 @@ export class User {
 
   @Prop({
     // type: UserType,
-    enum: [UserType.ADMIN,UserType.CUSTOMER,UserType.GUEST,UserType.SUPPER_ADMIN],
+    enum: [UserType.ADMIN, UserType.CUSTOMER, UserType.GUEST, UserType.SUPPER_ADMIN],
     default: UserType.CUSTOMER
   })
-  userType:UserType;
+  userType: UserType;
+
+  @Prop({
+    enum: [Provider.CUSTOM, Provider.GOOGLE],
+    default: Provider.GOOGLE
+  })
+  provider: Provider;
 }
 export const UserSchema = SchemaFactory.createForClass(User);
 
