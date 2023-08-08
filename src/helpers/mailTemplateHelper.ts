@@ -1,17 +1,17 @@
 export class MailTemplate {
-    private static instance: MailTemplate | null = null;
+  private static instance: MailTemplate | null = null;
 
-    private constructor() {
-    }
+  private constructor() {
+  }
 
-    public static getInstance(): MailTemplate {
-        if (!MailTemplate.instance) {
-            MailTemplate.instance = new MailTemplate();
-        }
-        return MailTemplate.instance;
+  public static getInstance(): MailTemplate {
+    if (!MailTemplate.instance) {
+      MailTemplate.instance = new MailTemplate();
     }
-    createVerificationHtmlTemplate(userName: string, verificationLink: string) {
-        return `
+    return MailTemplate.instance;
+  }
+  createVerificationHtmlTemplate(userName: string, verificationLink: string) {
+    return `
   <!DOCTYPE html>
 <html>
 <head>
@@ -52,6 +52,7 @@ export class MailTemplate {
       color: #007bff;
       text-decoration: none;
       cursor: pointer;
+      text-decoration: underline
     }
   </style>
 </head>
@@ -64,7 +65,8 @@ export class MailTemplate {
       <p>Hello <strong>${userName}</strong>,</p>
       <p>Welcome to Chit-Chat App! We're excited to have you on board.</p>
       <p>To complete your account verification, please click on the link below:</p>
-      <p><a class="verification-link" href="${verificationLink}" target="_blank" rel="noopener">Verify Your Account</a></p>
+      <p>
+      <a class="verification-link" href="${verificationLink}" target="_blank" rel="noopener">Verify Your Account</a>
       <p>If you didn't sign up for Chit-Chat App, you can safely ignore this email.</p>
       <p>Thank you,<br> The <strong>Chit-Chat</strong> App Team</p>
     </div>
@@ -74,6 +76,6 @@ export class MailTemplate {
 
 
     `
-    }
+  }
 
 }

@@ -19,7 +19,6 @@ import mongoose, { Model } from 'mongoose';
 import { AllUserDto } from './dto/allUserDto';
 import { UpdateProfileDto } from './dto/updateProfile';
 import { LoginRequestType, UserLoginDto } from './dto/userLoginDto';
-
 dotenv.config();
 @Injectable()
 export class UserService {
@@ -45,18 +44,19 @@ export class UserService {
     }
   }
   async sendVerificationCode(user: IUser) {
-    const token = await AuthHelper.getInstance().generateToken(user, this.jwtService, '2D');
+    const token = await AuthHelper.getInstance().generateToken({ userId: user._id }, this.jwtService, '2D');
+    // const token = '12345'
     const link = `localhost:${process.env.APP_PORT}/user/verify/${token}`
     let mailObj = {
-       userName: user.name,
-       to:user?.email,
-       subject:"Verification Link",  
-       verificationLink: link 
-      }
+      userName: user.name,
+      to: user?.email,
+      subject: "Verification Link",
+      verificationLink: link
+    }
     await this.sendEmail(mailObj);
   }
   async verifyUser(token: string) {
-    const user = await AuthHelper.getInstance().tokenVerify(token, this.userModel, this.jwtService);
+    const user = await AuthHelper.getInstance().getUserFromVerificationToken(token, this.userModel, this.jwtService);
     if (!GlobalHelper.getInstance().isEmpty(user)) {
       await this.userModel.findByIdAndUpdate(user?._id, { isVerified: true })
       return { isVerified: true }
@@ -106,7 +106,8 @@ export class UserService {
       salt: '',
       verificationCode: '',
       resetCode: '',
-      isVerified: userType ? true : false,
+      // isVerified: userType ? true : false,
+      isVerified: true,
       status: Status.ACTIVE,
     };
 

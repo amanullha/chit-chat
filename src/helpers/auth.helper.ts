@@ -120,4 +120,25 @@ export class AuthHelper {
     return user;
 
   }
+  async getUserFromVerificationToken(
+    token: string,
+    userModel: Model<UserDocument>,
+    jwt: JwtService,
+  ): Promise<IUser> {
+    let user: IUser = null;
+    const secretKey = String(process.env.JWT_SECRET);
+    try {
+      const decodedToken = jwt.verify(token, {
+        secret: secretKey,
+      });
+      if (!GlobalHelper.getInstance().isEmpty(decodedToken)) {
+        user = await userModel.findById(decodedToken['body']['userId']).lean().exec();
+      }
+    } catch (error) {
+      user = null;
+    }
+
+    return user;
+
+  }
 }
