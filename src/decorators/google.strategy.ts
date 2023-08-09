@@ -18,9 +18,8 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     }
 
     async validate(accessToken: string, refreshToken: string, profile: any, done: VerifyCallback): Promise<any> {
-        const googleUser = profile?._json;
-        const userEmail = googleUser?.email ?? "";
-        const user = await this.userService.getUserByEmail(userEmail);
+        const googleUserProfile = profile?._json;
+        const user = await this.userService.processGoogleUser(googleUserProfile);
         if (!user) {
             throw new UnauthorizedException();
         }

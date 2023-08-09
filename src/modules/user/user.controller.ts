@@ -15,6 +15,19 @@ import { UserService } from './user.service';
 export class UserController {
   constructor(private readonly userService: UserService) { }
 
+  @Get("/google/login")
+  @UseGuards(AuthGuard('google'))
+  async googleLogin() {
+    console.log("google login");
+  }
+  @Get("google/callback")
+  @UseGuards(AuthGuard('google'))
+  async googleLoginCallback(
+    @GetUser() user: any
+  ): Promise<{ user: IUser; tokens: JwtTokens; }> {
+    return await this.userService.googleLoginCallback(user);
+  }
+
   @Post('/create-admin')
   async createAdmin(@Body() createUserDto: CreateUserDto) {
     return await this.userService.createUser(createUserDto, UserType.ADMIN);
@@ -27,24 +40,9 @@ export class UserController {
   async userLogin(@Body() userLoginDto: UserLoginDto): Promise<{ user: IUser; tokens: JwtTokens; }> {
     return await this.userService.userLogin(userLoginDto);
   }
-  @Get("/google/login")
-  @UseGuards(AuthGuard('google'))
-  async googleLogin() {
-    console.log("google login");
-
-  }
-
-  @Get("/google/login/callback")
-  @UseGuards(AuthGuard('google'))
-  async googleLoginCallback(
-    @GetUser() user: any
-  ) {
-    console.log("calling from here");
-    console.log("user: ", user);
 
 
-    // Redirect or return JWT token
-  }
+
 
   @Put('/update-profile')
   @UseGuards(AuthGuard("jwt"))

@@ -53,6 +53,8 @@ export class User {
     default: Provider.GOOGLE
   })
   provider: Provider;
+  @Prop()
+  photo:string
 }
 export const UserSchema = SchemaFactory.createForClass(User);
 

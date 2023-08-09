@@ -16,8 +16,11 @@ export class AuthHelper {
     return AuthHelper.instance;
   }
   async generateHash(value: string): Promise<string> {
-    const salt = await bcrypt.genSalt();
-    const hash = await bcrypt.hash(value, salt);
+    let hash = null;
+    if (!GlobalHelper.getInstance().isEmpty(value)) {
+      const salt = await bcrypt.genSalt();
+      hash = await bcrypt.hash(value, salt);
+    }
     return hash;
   }
   async compareHash(value: string, hash: string): Promise<boolean> {

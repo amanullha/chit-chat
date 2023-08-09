@@ -1,6 +1,6 @@
 import { ExceptionHelper } from '@helpers/exception.helper';
 import { GlobalHelper } from '@helpers/global.helper';
-import { IUser, JwtTokens } from '@interfaces/user.interface';
+import { GoogleUserProfile, IUser, JwtTokens } from '@interfaces/user.interface';
 import { DB_tables } from '@models/dbTable.enum';
 import { Status } from '@models/status.enum';
 import { UserType } from '@models/userType.enum';
@@ -10,6 +10,7 @@ import { CreateUserDto } from './dto/createUserDto';
 import { AuthHelper } from '@helpers/auth.helper';
 import { MailTemplate } from '@helpers/mailTemplateHelper';
 import { EmailOptions } from '@interfaces/emailOptions.interface';
+import { Provider } from '@models/privider.enum';
 import { MailService } from '@modules/mail/mail.service';
 import { JwtService } from '@nestjs/jwt';
 import { InjectModel } from '@nestjs/mongoose';
@@ -33,16 +34,40 @@ export class UserService {
     createUserDto: CreateUserDto,
     userType?: UserType,
   ): Promise<{ user: IUser; tokens: JwtTokens }> {
-    try {
-      const obj = await this.constructCreateUserObj(createUserDto, userType);
-      let user: IUser = (await this.userModel.create(obj)).toObject();
-      await this.sendVerificationCode(user);
-      const returnUser = this.constructReturnUserObj(user);
-      return returnUser;
-    } catch (error) {
-      this.resolveError(error);
+
+    await this.isExistUser(createUserDto);
+
+    const obj = await this.constructCreateUserObj(createUserDto, userType);
+    let user: IUser = (await this.userModel.create(obj)).toObject();
+    await this.sendVerificationCode(user);
+    const returnUser = this.constructReturnUserObj(user);
+    return returnUser;
+
+  }
+
+
+  async isExistUser(createUserDto: CreateUserDto) {
+    let existUser = await this.getUserByEmail(createUserDto?.email);
+    if (!GlobalHelper.getInstance().isEmpty(existUser)) {
+      if (existUser.provider == Provider.GOOGLE) {
+        ExceptionHelper.getInstance().defaultError(
+          "Email linked to existing Google user",
+          "Email_linked_to_existing_Google_user",
+          HttpStatus.CONFLICT
+        );
+      }
+
+      else {
+        ExceptionHelper.getInstance().defaultError(
+          "User exist with this email",
+          "User_exist_with_this_email",
+          HttpStatus.CONFLICT
+        );
+      }
+
     }
   }
+
   async sendVerificationCode(user: IUser) {
     const token = await AuthHelper.getInstance().generateToken({ userId: user._id }, this.jwtService, '2D');
     // const token = '12345'
@@ -66,33 +91,37 @@ export class UserService {
     }
 
   }
-  private resolveError(error: any) {
-    if (error?.code == '11000') {
-      ExceptionHelper.getInstance().throwDuplicateException(
-        'User_exist_with_this_email',
-      );
-    }
+  // private resolveError(error: any) {
+  //   if (error?.code == '11000') {
+  //     ExceptionHelper.getInstance().throwDuplicateException(
+  //       'User_exist_with_this_email',
+  //     );
+  //   }
 
-    ExceptionHelper.getInstance().defaultError(
-      error?.message,
-      error?.message,
-      error?.code,
-    );
-  }
+  //   ExceptionHelper.getInstance().defaultError(
+  //     error?.message,
+  //     error?.message,
+  //     error?.code,
+  //   );
+  // }
+
 
   async getUserByEmail(email: string): Promise<IUser> {
+
     if (!GlobalHelper.getInstance().isEmpty(email)) {
       const user = (
         await this.userModel.findOne({ email: email }).exec()
-      ).toObject();
+      )?.toObject();
       return user || null;
     }
     return null;
+
   }
 
   private async constructCreateUserObj(
     createUserDto: CreateUserDto,
     userType?: UserType,
+    provider?: Provider
   ): Promise<IUser> {
     const hashPassword = await AuthHelper.getInstance().generateHash(
       createUserDto.password,
@@ -109,6 +138,7 @@ export class UserService {
       // isVerified: userType ? true : false,
       isVerified: true,
       status: Status.ACTIVE,
+      provider: provider ?? Provider.CUSTOM,
     };
 
     return obj;
@@ -223,5 +253,58 @@ export class UserService {
 
     return await this.mailService.sendEmail(emailObj);
   }
+  async processGoogleUser(googleUser: GoogleUserProfile) {
+    if (!GlobalHelper.getInstance().isEmpty(googleUser)) {
+      let user = await this.getUserByEmail(googleUser?.email);
+      if (GlobalHelper.getInstance().isEmpty(user)) {
+        const userObj = this.constructGoogleUserObject(googleUser);
+        user = (await this.userModel.create(userObj)).toObject();
+        return user;
+      }
+      else {
+        if (user?.provider == Provider.CUSTOM) {
+          ExceptionHelper.getInstance().defaultError(
+            "user exist with this email",
+            "user_exist_with_this_email",
+            HttpStatus.CONFLICT
+          )
+        }
+        else {
+          return user;
+        }
+      }
+    }
+    else {
+      ExceptionHelper.getInstance().noDataFound();
+    }
+  }
 
+
+  private constructGoogleUserObject(googleUser: GoogleUserProfile) {
+    return {
+      name: googleUser.name ?? '',
+      email: googleUser.email ?? '',
+      phone: '',
+      password: '',
+      userType: UserType.CUSTOMER,
+      salt: '',
+      verificationCode: '',
+      resetCode: '',
+      isVerified: true,
+      status: Status.ACTIVE,
+      provider: Provider.GOOGLE,
+    };
+  }
+  async googleLoginCallback(user: IUser): Promise<{ user: IUser; tokens: JwtTokens; }> {
+    try {
+      const returnUser = this.constructReturnUserObj(user);
+      return returnUser;
+    } catch (error) {
+      ExceptionHelper.getInstance().defaultError(
+        error?.message,
+        error?.message?.split("").join("_"),
+        error?.status ?? HttpStatus.BAD_REQUEST
+      )
+    }
+  }
 }
